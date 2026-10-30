@@ -3,6 +3,7 @@
 // stations → which games appear on the home screen and in what order.
 import { UNITS } from './units/index.js';
 import { MAPS } from './maps/georgia.js';
+import { SCENES } from './scenes/georgia-long-ago.js';
 import { sfx, speak, hush, unlockAudio, setSound, soundOn } from './audio.js';
 
 const app = document.getElementById('app');
@@ -32,9 +33,11 @@ function defaultUnit() {
 }
 
 let unit, state;
+// told = village pieces announced on a results screen; shown = pieces that already did their build-in on home.
+const freshState = () => ({ mastery: {}, stars: {}, say: {}, missed: {}, told: [], shown: [] });
 function useUnit(u) {
   unit = u;
-  state = Object.assign({ mastery: {}, stars: {}, say: {}, missed: {} }, store.get('sq:' + u.id, {}));
+  state = Object.assign(freshState(), store.get('sq:' + u.id, {}));
   store.set('sq:unit', u.id);
 }
 const save = () => store.set('sq:' + unit.id, state);
@@ -61,6 +64,13 @@ function nextStation(afterId) {
   const start = afterId ? list.findIndex(s => s.id === afterId) + 1 : 0;
   const ordered = [...list.slice(start), ...list.slice(0, start)];
   return ordered.find(s => stationScore(s) < 1) || list.find(s => s.type === 'quiz') || list[0];
+}
+
+function unlockedPieces() {
+  return (unit.build?.pieces || []).filter(p => {
+    const st = unit.stations.find(s => s.id === p.station);
+    return st && stationScore(st) >= p.at;
+  });
 }
 
 // ---------- shell ----------
@@ -98,6 +108,10 @@ app.addEventListener('click', e => {
   }
   handlers[act]?.(b, e);
 });
+// SVG village pieces are role="button": make Enter/Space work like a tap.
+app.addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('[role="button"][data-act]')) { e.preventDefault(); e.target.dispatchEvent(new MouseEvent('click', { bubbles: true })); }
+});
 
 function route() {
   hush(); handlers = {};
@@ -121,12 +135,12 @@ function whenText(d) {
 function home() {
   const d = daysUntil(unit.testDate);
   const date = new Date(unit.testDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-  const ready = readiness();
   const next = nextStation();
   handlers = {
     play: b => { sfx.tap(); go('#/s/' + b.dataset.id); },
     grownup: () => { sfx.tap(); go('#/grownup'); },
     unit: b => { sfx.tap(); useUnit(UNITS.find(u => u.id === b.dataset.id)); home(); },
+    piece: tapPiece,
     install: async () => { if (!deferredInstall) return; deferredInstall.prompt(); deferredInstall = null; home(); },
   };
   app.innerHTML = `
@@ -145,9 +159,6 @@ function home() {
           <h1 class="hero-title">${esc(unit.title)}</h1>
           <p class="countdown">${esc(unit.kid)}’s test is <b>${whenText(d)}</b></p>
         </div>
-        <div class="ring" style="--p:${ready}" role="img" aria-label="${ready} percent ready">
-          <span><b>${ready}%</b>ready</span>
-        </div>
       </section>
 
       <button class="cta" data-act="play" data-id="${next.id}">
@@ -155,6 +166,8 @@ function home() {
         <span class="cta-text"><small>${stationScore(next) > 0 ? 'Keep going' : 'Play next'}</small>${esc(next.title)}</span>
         <span class="cta-go" aria-hidden="true">▶</span>
       </button>
+
+      ${village()}
 
       <h2 class="label">All games</h2>
       <div class="stations">
@@ -177,6 +190,73 @@ function home() {
 
       <button class="pill grown" data-act="grownup">Grown-ups: progress & weak spots</button>
     </main>`;
+  afterVillage();
+}
+
+// ---------- village: every piece is a fact, unlocked by playing ----------
+function village() {
+  const B = unit.build;
+  if (!B) return '';
+  const S = SCENES[B.scene];
+  const open = new Set(unlockedPieces().map(p => p.id));
+  const byId = Object.fromEntries(B.pieces.map(p => [p.id, p]));
+  const fresh = id => open.has(id) && !state.shown.includes(id);
+  const stickers = cls => `<div class="stickers ${cls}">${B.pieces.map(p => `
+      <button class="sticker ${open.has(p.id) ? '' : 'locked'} ${fresh(p.id) ? 'fresh' : ''}" data-act="piece" data-id="${p.id}">
+        <span aria-hidden="true">${open.has(p.id) ? p.icon : '🔒'}</span>${open.has(p.id) ? esc(p.label) : 'Locked'}</button>`).join('')}</div>`;
+  // With a drawn scene, phones also get a one-row sticker strip: the art is too small there to tap reliably.
+  const art = S
+    ? `${stickers('strip')}<div class="scene-wrap"><svg class="scene" viewBox="${S.viewBox}" role="group" aria-label="${esc(B.title)}: ${open.size} of ${B.pieces.length} pieces built">
+        ${S.background}
+        ${S.pieces.filter(sp => byId[sp.id]).map(sp => `
+          <g class="piece ${open.has(sp.id) ? '' : 'locked'} ${fresh(sp.id) ? 'fresh' : ''}" data-act="piece" data-id="${sp.id}"
+             role="button" tabindex="0" aria-label="${esc(byId[sp.id].label)}${open.has(sp.id) ? '' : ' — locked'}">${sp.svg}</g>`).join('')}
+      </svg></div>`
+    // Units without a drawn scene get a sticker board built from the pieces' emoji.
+    : stickers('board');
+  return `
+    <section class="village">
+      <div class="village-head"><h2>${esc(B.title)}</h2><span class="built"><b>${open.size}</b> of ${B.pieces.length} built</span></div>
+      ${art}
+      <p class="village-cap" id="vcap" aria-live="polite">${open.size ? 'Tap a piece to hear about it. Gray pieces are still locked.' : 'Play a game to build your first piece!'}</p>
+    </section>`;
+}
+
+function afterVillage() {
+  const B = unit.build;
+  if (!B) return;
+  // Every piece gets a tap area at least 70 units square, so small art (the sign, the fish) is easy to hit.
+  document.querySelectorAll('svg.scene .piece').forEach(g => {
+    const bb = g.getBBox(), w = Math.max(bb.width, 70), h = Math.max(bb.height, 70);
+    const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    Object.entries({ x: bb.x + bb.width / 2 - w / 2, y: bb.y + bb.height / 2 - h / 2, width: w, height: h, class: 'hit' })
+      .forEach(([k, v]) => r.setAttribute(k, v));
+    g.prepend(r);
+  });
+  const fresh = unlockedPieces().filter(p => !state.shown.includes(p.id));
+  if (!fresh.length) return;
+  state.shown.push(...fresh.map(p => p.id)); save();
+  const names = fresh.map(p => p.label).join(' and ');
+  const cap = document.getElementById('vcap');
+  cap.innerHTML = `✨ New in your village: <b>${esc(names)}</b>! Tap it to hear about it.`;
+  setTimeout(() => { sfx.place(); speak(`New in your village: ${names}!`); }, 600);
+}
+
+function tapPiece(b) {
+  const p = unit.build.pieces.find(x => x.id === b.dataset.id);
+  const cap = document.getElementById('vcap');
+  document.querySelectorAll('.piece.sel, .sticker.sel').forEach(x => x.classList.remove('sel'));
+  if (unlockedPieces().includes(p)) {
+    sfx.tap(); b.classList.add('sel');
+    cap.innerHTML = `<b>${p.icon} ${esc(p.label)}.</b> ${esc(p.fact)}`;
+    speak(`${p.label}. ${p.fact}`);
+  } else {
+    const st = unit.stations.find(s => s.id === p.station);
+    const verb = stationScore(st) > 0 ? 'Keep playing' : 'Play';
+    sfx.tap(); b.classList.add('sel');
+    cap.innerHTML = `🔒 ${verb} <b>${esc(st.title)}</b> to build this! <button class="pill" data-act="play" data-id="${st.id}">${st.icon} Play ${esc(st.title)}</button>`;
+    speak(`This one is still locked. ${verb} ${st.title} to build it!`);
+  }
 }
 
 // ---------- results ----------
@@ -192,25 +272,34 @@ function confetti() {
 
 function finish(st, n, msg, extra = '') {
   state.stars[st.id] = Math.max(state.stars[st.id] || 0, n);
+  const fresh = unlockedPieces().filter(p => !state.told.includes(p.id));
+  state.told.push(...fresh.map(p => p.id));
   save();
   const nxt = nextStation(st.id);
   handlers = {
     again: () => { sfx.tap(); route(); },
     next: () => { sfx.tap(); go('#/s/' + nxt.id); },
   };
+  const names = fresh.map(p => p.label).join(' and ');
   screen(st.title, `
     <section class="done">
       ${stars(n, 'big')}
       <h2 class="done-title">${n === 3 ? 'Superstar!' : n === 2 ? 'Great work!' : 'Good practice!'}</h2>
       <p class="done-msg">${esc(msg)}</p>
+      ${fresh.length ? `
+        <div class="unlocked">
+          <h3>✨ You built something new!</h3>
+          <div class="unlocked-list">${fresh.map(p => `<span class="new-piece"><span aria-hidden="true">${p.icon}</span> ${esc(p.label)}</span>`).join('')}</div>
+        </div>` : ''}
       ${extra}
       <div class="row">
         <button class="btn primary" data-act="next">Next: ${esc(nxt.title)} ▶</button>
+        ${fresh.length ? '<button class="btn" data-act="home">🏡 See my village</button>' : ''}
         <button class="btn" data-act="again">Play again</button>
       </div>
     </section>`, 'center');
   sfx.win(); confetti();
-  setTimeout(() => speak(`${n === 3 ? 'Superstar!' : 'Great work!'} ${msg}`), 500);
+  setTimeout(() => speak(`${n === 3 ? 'Superstar!' : 'Great work!'} ${msg}${fresh.length ? ` You built: ${names}!` : ''}`), 500);
 }
 
 // ---------- Study Cards ----------
@@ -554,7 +643,7 @@ function grownup() {
   handlers = {
     reset: () => {
       if (!confirm(`Erase all of ${unit.kid}’s progress on “${unit.title}”?`)) return;
-      state = { mastery: {}, stars: {}, say: {}, missed: {} }; save(); sfx.tap(); go('#/');
+      state = freshState(); save(); sfx.tap(); go('#/');
     },
   };
   screen('Grown-ups', `

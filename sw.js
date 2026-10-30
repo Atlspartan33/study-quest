@@ -1,7 +1,7 @@
 // Offline: precache the shell + every unit; network-first (fresh when online), cache when offline.
 // Bump VERSION whenever a unit or engine file changes, and add new unit files to SHELL.
-const VERSION = 'sq-v1';
-const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'audio.js', 'maps/georgia.js', 'units/index.js',
+const VERSION = 'sq-v3';
+const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'audio.js', 'maps/georgia.js', 'scenes/georgia-long-ago.js', 'units/index.js',
   'units/2026-11-06-cherokee-creek.js',
   'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-192.png',
   'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png', 'icons/favicon.png'];

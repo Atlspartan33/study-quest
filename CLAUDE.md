@@ -21,6 +21,12 @@ Terrell sends photos of a study guide and says "add this to Study Quest". Do thi
      Bins come from `groups` unless the sort has its own `binDefs`. `why` adds a sentence after placing.
    - `say` — open-response prompts: `prompt`, `frame` (sentence starter shown as a hint), `points`
      (what a grown-up should listen for), `need` (how many points = test-ready).
+   - `build` — the home-screen reward picture. Every piece IS a fact from the guide (`label`, `fact`, `icon`)
+     and unlocks when a station's score reaches `at` (0–1; 0.33 = one star, 1 = three stars; quiz = average
+     mastery, say = share of answers met). Spread ~12 pieces so each game unlocks 1–3 and the last few need
+     repeat quiz rounds. `scene` names a drawn SVG in `scenes/` (one `<g>` per piece, draw order = z-order);
+     with no scene the pieces render as an emoji sticker board, so a new scene is optional but worth drawing.
+     Fun must stay content: no coins, shops, avatars, timers, or long animations.
    - `stations` — the home-screen games in order. Types: `learn`, `quiz`, `sort` (with `sort: '<key>'`),
      `map` (with `map: 'georgia'`, `explore` text per region, `questions` with accepted region ids), `say`.
      Drop stations that don't fit the content; a math unit might be just learn + quiz + say.
@@ -34,8 +40,10 @@ New mode types go in `app.js` → `MODES`. New maps go in `maps/` and get regist
 Use 🏾 skin-tone modifiers on any person/hand emoji. Avoid person emoji standing in for Native people.
 
 ## Files
-- `app.js` — router, home, the five game modes, results, grown-up view. Progress in localStorage `sq:<unitId>`.
+- `app.js` — router, home + village, the five game modes, results, grown-up view. Progress in localStorage `sq:<unitId>`.
 - `audio.js` — synthesized SFX + speechSynthesis read-aloud (everything is read aloud when sound is on).
 - `maps/georgia.js` — simplified Georgia outline + Mountains / Piedmont / Coastal Plain, `regionAt(x, y)`.
+- `scenes/georgia-long-ago.js` — the Cherokee/Creek village art; register new scenes in its `SCENES` export
+  (or a shared index once there are two). Locked pieces render faded + grayscale; each gets a ≥70-unit tap rect.
 - `units/` — one file per study guide + `index.js` list.
 - `sw.js` — offline cache (shell + all units + Google Fonts). Only on HTTPS or localhost.

@@ -218,6 +218,39 @@ export default {
       points: ['Corn, squash, and beans (all three)', 'Planted by the Cherokee'] },
   ],
 
+  // The home-screen village. Each piece is a fact; it unlocks when `station`'s score reaches `at`
+  // (0–1: stars/3 for most games — 0.33 = one star, average mastery for the quiz, share of answers met for Say It).
+  build: {
+    title: 'Build Georgia long ago',
+    scene: 'georgiaLongAgo',
+    pieces: [
+      { id: 'garden', icon: '🌽', station: 'learn', at: 0.33, label: 'Three Sisters garden',
+        fact: 'Corn, squash, and beans — the Three Sisters! They were planted by the Cherokee.' },
+      { id: 'mountains', icon: '⛰️', station: 'map', at: 0.33, label: 'The Mountains',
+        fact: 'The Cherokee lived in the mountains of North Georgia. They traveled through the valleys, because it was too hard to go over a mountain.' },
+      { id: 'river', icon: '🛶', station: 'map', at: 1, label: 'Creek and canoe',
+        fact: 'The Creek lived near creeks and rivers. That is how they traveled — and how they got their name!' },
+      { id: 'plaza', icon: '🏛️', station: 'sort', at: 0.33, label: 'Central plaza',
+        fact: 'Creek and Cherokee villages both had a central plaza — a town square.' },
+      { id: 'council', icon: '🗣️', station: 'sort', at: 1, label: 'Council House',
+        fact: 'Both villages had Council Houses around the plaza.' },
+      { id: 'palisade', icon: '🪵', station: 'thennow', at: 0.33, label: 'Palisade',
+        fact: 'A palisade is a wall of protection around the village. The Creek and the Cherokee both built them.' },
+      { id: 'summer', icon: '☀️', station: 'thennow', at: 1, label: 'Summer house',
+        fact: 'The Cherokee had a summer house for the hot months.' },
+      { id: 'winter', icon: '❄️', station: 'quiz', at: 0.2, label: 'Winter house',
+        fact: 'And a winter house for the cold months! The Cherokee had two houses.' },
+      { id: 'creekhouse', icon: '🛖', station: 'quiz', at: 0.45, label: 'Creek house',
+        fact: 'The Creek built their houses from dry mud and sticks.' },
+      { id: 'fishing', icon: '🎣', station: 'quiz', at: 0.75, label: 'Fish rack',
+        fact: 'Cherokee boys helped Dad hunt and fish. Girls helped Mom garden.' },
+      { id: 'trading', icon: '💛', station: 'say', at: 0.4, label: "Sequoyah's trading post",
+        fact: 'Sequoyah showed compassion. At his trading post, he gave people what they needed, even if they had nothing to trade.' },
+      { id: 'alphabet', icon: '✍️', station: 'say', at: 1, label: "Sequoyah's alphabet",
+        fact: "This sign says Tsalagi — Cherokee — in Sequoyah's alphabet. It took him 12 years, and he never gave up, so his people's stories would never be forgotten." },
+    ],
+  },
+
   stations: [
     { id: 'learn', type: 'learn', title: 'Study Cards', icon: '📖', blurb: 'Flip every card' },
     { id: 'map', type: 'map', map: 'georgia', title: 'Map It', icon: '🗺️', blurb: 'Where did they live?',
