@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "study-quest",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["server.mjs", "5243"],
+      "port": 5243
+    }
+  ]
+}
