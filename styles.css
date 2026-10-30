@@ -52,7 +52,7 @@ button:disabled { cursor: default; }
 }
 .bar-title { flex: 1; margin: 0; font-size: 26px; font-weight: 700; text-align: center; }
 .pill {
-  min-height: 48px; padding: 8px 18px;
+  min-height: 56px; padding: 8px 18px;
   border: var(--line); border-radius: 999px;
   background: var(--card); box-shadow: 0 3px 0 var(--ink);
   font-weight: 600; font-size: 18px;
@@ -159,7 +159,7 @@ button:disabled { cursor: default; }
 .btn:disabled { opacity: 0.4; }
 .btn.primary { background: var(--primary); color: var(--primary-ink); }
 .btn.ok { background: var(--ok); color: #fff; }
-.btn.quiet { min-height: 52px; font-size: 18px; box-shadow: 0 3px 0 var(--ink); }
+.btn.quiet { min-height: 56px; font-size: 18px; box-shadow: 0 3px 0 var(--ink); }
 .btn.big { width: 100%; min-height: 80px; font-size: 24px; }
 .btn.danger { background: #FCE4E2; color: var(--no); margin-top: 8px; }
 
@@ -259,7 +259,6 @@ button:disabled { cursor: default; }
 .info.empty { text-align: center; border-left-width: 3px; }
 .map-q { display: flex; align-items: center; justify-content: center; gap: 12px; }
 .map-q .q { margin: 0; text-align: center; }
-.map-q .pill { flex: none; width: 56px; padding: 0; }
 
 /* say it */
 .say-card { border-top: 14px solid var(--primary); }
@@ -352,3 +351,14 @@ button:disabled { cursor: default; }
   .choice { min-height: 88px; }
   .flash { min-height: 480px; }
 }
+
+/* Hint that stays until the next question (and shows without animation), not color-only. */
+.region.hint { opacity: 1; stroke: var(--ink); stroke-width: 6; stroke-dasharray: 12 8; }
+/* Sort bins: right/wrong also shown by a mark, not only color. */
+.bin.right::after, .bin.wrong::after {
+  position: absolute; top: -12px; left: -8px;
+  width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center;
+  color: #fff; font-size: 26px; font-weight: 700; border: 3px solid var(--ink);
+}
+.bin.right::after { content: '✓'; background: var(--ok); }
+.bin.wrong::after { content: '✗'; background: var(--no); }

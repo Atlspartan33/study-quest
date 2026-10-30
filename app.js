@@ -68,7 +68,7 @@ let handlers = {};
 function go(hash) { if (location.hash === hash) route(); else location.hash = hash; }
 
 function stars(n, size = '') {
-  return `<span class="stars ${size}" aria-label="${n} of 3 stars">${[0, 1, 2].map(i => `<i class="${i < n ? 'on' : ''}">★</i>`).join('')}</span>`;
+  return `<span class="stars ${size}" aria-label="${n} of 3 stars">${[0, 1, 2].map(i => `<i class="${i < n ? 'on' : ''}">${i < n ? '★' : '☆'}</i>`).join('')}</span>`;
 }
 const soundBtn = () => `<button class="icon-btn" data-act="sound" aria-pressed="${soundOn()}" aria-label="${soundOn() ? 'Sound on — tap to mute' : 'Sound off — tap to turn on'}">${soundOn() ? '🔊' : '🔇'}</button>`;
 
@@ -436,7 +436,7 @@ function mapMode(st) {
       screen(st.title, `
         ${progress(qi, qs.length)}
         <p class="counter">Question ${qi + 1} of ${qs.length}</p>
-        <div class="map-q"><h2 class="q">${esc(q.q)}</h2><button class="pill read" data-act="read">🔊</button></div>
+        <div class="map-q"><h2 class="q">${esc(q.q)}</h2><button class="pill read" data-act="read" aria-label="Read the question to me">🔊 Read to me</button></div>
         <div class="map-wrap">${svg()}</div>
         <div class="feedback" id="fb"></div>`);
       speak(q.q);
@@ -453,7 +453,12 @@ function mapMode(st) {
       const pt = s.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
       const p = pt.matrixTransform(s.getScreenCTM().inverse());
       const id = M.regionAt(p.x, p.y);
-      if (!id) return;
+      if (!id) {
+        sfx.tap(); live('Tap inside Georgia!'); speak('Tap inside Georgia!');
+        const box = document.getElementById('fb') || document.querySelector('.info');
+        if (box) box.innerHTML = '<p class="fb no">👆🏾 Tap inside Georgia!</p>';
+        return;
+      }
       if (phase === 'explore') {
         sfx.tap(); picked = id; seen.add(id); draw(); speak(st.explore[id]);
         return;
@@ -472,7 +477,7 @@ function mapMode(st) {
         }, 1500);
       } else {
         missed = true; flash(id, 'miss'); sfx.wrong();
-        q.answer.forEach(a => flash(a, 'glow'));
+        q.answer.forEach(a => { flash(a, 'glow'); document.querySelector(`.region[data-r="${a}"]`)?.classList.add('hint'); });
         const p = `Not quite — that’s the ${regionById(id).label}. Try the glowing part!`;
         fb.innerHTML = `<p class="fb no">${esc(p)}</p>`; live(p); speak(p);
       }
